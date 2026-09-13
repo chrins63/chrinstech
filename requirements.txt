@@ -1,0 +1,18 @@
+# ChrisTech Website Monitoring Tool Dependencies
+# Install with: pip install -r requirements.txt
+
+# Web framework and routing
+Flask>=3.0.0
+
+# Database ORM and PostgreSQL driver
+Flask-SQLAlchemy>=3.1.1
+psycopg2-binary>=2.9.9
+
+# HTTP requests for website uptime and keyword checking
+requests>=2.31.0
+
+# Background task scheduling for automated periodic checks
+APScheduler>=3.10.4
+
+# Environment variable management (.env file)
+python-dotenv>=1.0.1

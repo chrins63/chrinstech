@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Support - {{ website.name }}</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-main: #0b0f17;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1a2234;
+      --border-subtle: #243049;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --accent: #2563eb;
+      --up-green: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .portal-box {
+      max-width: 620px;
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .portal-header {
+      background: var(--bg-surface-elevated);
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .portal-body {
+      padding: 28px;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #ffffff;
+      outline: none;
+    }
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
+    }
+    .btn-submit {
+      width: 100%;
+      background: var(--accent);
+      color: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.15s ease;
+    }
+    .btn-submit:hover {
+      background: #1d4ed8;
+    }
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--up-green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--up-green);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="portal-box">
+    <div class="portal-header">
+      <div>
+        <h1 style="font-size: 18px; font-weight: 800; color: #ffffff;">{{ website.name }} Support</h1>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+          Powered by ChrisTech Centralized Desk
+        </p>
+      </div>
+      <div>
+        <span class="badge-status">
+          <span class="badge-dot"></span>
+          {{ website.status }}
+        </span>
+      </div>
+    </div>
+
+    <div class="portal-body">
+      {% if submitted_ticket %}
+        <div style="text-align: center; padding: 24px 0;">
+          <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
+          <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">Ticket Received!</h2>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+            Thank you for reaching out. We have logged your support request:
+          </p>
+          <div style="display: inline-block; background: var(--bg-surface-elevated); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-subtle); font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #60a5fa; font-weight: 700; margin-bottom: 24px;">
+            Ticket #{{ submitted_ticket.ticket_number }}
+          </div>
+          <p style="color: var(--text-secondary); font-size: 13px;">
+            Our team will review your inquiry and follow up via email at <strong>{{ submitted_ticket.requester_email }}</strong>.
+          </p>
+          <div style="margin-top: 24px;">
+            <a href="{{ url_for('public_support_portal', website_id=website.id) }}" style="color: #60a5fa; font-size: 14px; text-decoration: none;">
+              &larr; Submit another inquiry
+            </a>
+          </div>
+        </div>
+      {% else %}
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+          Have a question, reporting a bug, or having trouble with {{ website.name }}? Send us a message and our technical support team will assist you.
+        </p>
+
+        <form method="POST" action="{{ url_for('public_support_portal', website_id=website.id) }}">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label class="form-label">Your Name *</label>
+              <input type="text" name="name" class="form-control" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input type="email" name="email" class="form-control" placeholder="john@example.com" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Topic / Category</label>
+            <select name="category" class="form-control">
+              <option value="general">General Question</option>
+              <option value="bug">Report an Issue / Bug</option>
+              <option value="performance">Slow Loading / Performance</option>
+              <option value="billing">Account / Billing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Subject *</label>
+            <input type="text" name="subject" class="form-control" placeholder="How can we help?" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">How can we help? (Details) *</label>
+            <textarea name="message" rows="4" class="form-control" placeholder="Please describe the issue or question..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit">
+            Send Support Request
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+</html>

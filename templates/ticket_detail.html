@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket #{{ ticket.ticket_number }} - ChrisTech Support{% endblock %}
+
+{% block content %}
+<!-- Breadcrumbs & Navigation -->
+<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted);">
+    <a href="{{ url_for('support_dashboard') }}" style="color: var(--text-secondary); text-decoration: none;">&larr; Back to Support Desk</a>
+    <span>/</span>
+    <span class="mono" style="color: #60a5fa;">#{{ ticket.ticket_number }}</span>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{{ url_for('site_detail', website_id=ticket.website.id) }}" class="btn btn-secondary btn-sm">
+      <span>🌐 Monitored Site Details</span>
+    </a>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start;">
+  <!-- Left Column: Ticket Details & Conversation -->
+  <div>
+    <!-- Ticket Summary Card -->
+    <div class="card" style="border-left: 4px solid {% if ticket.priority == 'urgent' %}#ef4444{% elif ticket.priority == 'high' %}#f97316{% elif ticket.priority == 'medium' %}#3b82f6{% else %}#64748b{% endif %};">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <span class="mono" style="font-size: 16px; font-weight: 700; color: #60a5fa;">#{{ ticket.ticket_number }}</span>
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(148, 163, 184, 0.15); color: #cbd5e1; text-transform: uppercase; font-weight: 700;">
+              {{ ticket.category }}
+            </span>
+            {% if ticket.is_automated_incident %}
+              <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 700;">
+                ⚡ OUTAGE INCIDENT
+              </span>
+            {% endif %}
+          </div>
+          <h1 style="font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">
+            {{ ticket.subject }}
+          </h1>
+        </div>
+
+        <div>
+          {% if ticket.status == 'open' %}
+            <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
+              Open
+            </span>
+          {% elif ticket.status == 'in_progress' %}
+            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+              In Progress
+            </span>
+          {% elif ticket.status == 'waiting' %}
+            <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">
+              Waiting on Client
+            </span>
+          {% elif ticket.status == 'resolved' %}
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+              Resolved
+            </span>
+          {% else %}
+            <span class="badge" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3);">
+              Closed
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Original Description -->
+      <div style="background-color: var(--bg-surface-elevated); padding: 18px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 12px;">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">
+          ORIGINAL INQUIRY / ISSUE REPORT:
+        </div>
+        <div style="color: #e2e8f0; font-size: 15px; line-height: 1.7; white-space: pre-wrap;">{{ ticket.description }}</div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 12px; color: var(--text-muted);">
+        <div>Reported by <strong>{{ ticket.requester_name }}</strong> &bull; <a href="mailto:{{ ticket.requester_email }}">{{ ticket.requester_email }}</a></div>
+        <div>Created on {{ ticket.created_at.strftime('%Y-%m-%d at %H:%M UTC') }}</div>
+      </div>
+    </div>
+
+    <!-- Conversation Thread -->
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <span>💬 Conversation Thread</span>
+        <span style="font-size: 12px; font-weight: 500; color: var(--text-muted);">({{ replies|length }} updates)</span>
+      </h3>
+
+      {% if replies %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          {% for reply in replies %}
+            <div style="background-color: {% if reply.is_internal_note %}rgba(245, 158, 11, 0.08){% else %}var(--bg-surface){% endif %}; border: 1px solid {% if reply.is_internal_note %}rgba(245, 158, 11, 0.35){% else %}var(--border-subtle){% endif %}; border-radius: 10px; padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-weight: 700; font-size: 14px; color: #f8fafc;">
+                    {{ reply.author_name }}
+                  </span>
+                  {% if reply.is_internal_note %}
+                    <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 11px; padding: 1px 6px; border-radius: 4px; font-weight: 700;">
+                      🔒 Internal Staff Note
+                    </span>
+                  {% elif reply.is_staff %}
+                    <span style="background: rgba(37, 99, 235, 0.2); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.4); font-size: 11px; padding: 1px 6px; border-radius: 4px; font-weight: 700;">
+                      Staff
+                    </span>
+                  {% else %}
+                    <span style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; font-size: 11px; padding: 1px 6px; border-radius: 4px;">
+                      Customer
+                    </span>
+                  {% endif %}
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  {{ reply.created_at.strftime('%b %d, %Y - %H:%M UTC') }}
+                </div>
+              </div>
+              <div style="font-size: 14px; color: #e2e8f0; line-height: 1.6; white-space: pre-wrap;">{{ reply.message }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 14px;">
+          No replies or updates on this ticket yet. Use the response box below to write a message or add a staff note.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Reply / Internal Note Form -->
+    <div class="card" style="background-color: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
+      <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 16px;">
+        Add Response or Internal Note
+      </h3>
+
+      <form method="POST" action="{{ url_for('add_ticket_reply', ticket_id=ticket.id) }}">
+        <!-- Toggle: Public Reply vs Internal Note -->
+        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+          <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: var(--bg-surface); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <input type="radio" name="is_internal_note" value="false" checked onchange="toggleNoteTheme(false)">
+            <span style="font-size: 13px; font-weight: 600; color: #f1f5f9;">💬 Public Reply to Requester</span>
+          </label>
+          <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: var(--bg-surface); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <input type="radio" name="is_internal_note" value="true" onchange="toggleNoteTheme(true)">
+            <span style="font-size: 13px; font-weight: 600; color: #fbbf24;">🔒 Internal Staff Note</span>
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div>
+            <label class="form-label" style="font-size: 12px;">Your Name / Agent</label>
+            <input type="text" name="author_name" class="form-control" value="Support Team" required>
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 12px;">Quick Status Update</label>
+            <select name="update_status" class="form-control">
+              <option value="">Keep current ({{ ticket.status }})</option>
+              <option value="in_progress">Set to: In Progress</option>
+              <option value="waiting">Set to: Waiting on Client</option>
+              <option value="resolved">Set to: Resolved</option>
+              <option value="closed">Set to: Closed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 12px;">Message</label>
+          <textarea id="replyMessageArea" name="message" rows="4" class="form-control" placeholder="Type your reply to the customer or internal notes here..." required></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="submit" id="submitReplyBtn" class="btn btn-primary" style="padding: 10px 20px;">
+            Post Response
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right Column: Ticket Metadata & Website Status -->
+  <div>
+    <!-- Quick Status & Priority Updater -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 14px;">
+        Manage Ticket
+      </h3>
+
+      <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket.id) }}">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 12px;">Ticket Status</label>
+          <select name="status" class="form-control" style="font-size: 13px;">
+            <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+            <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+            <option value="waiting" {% if ticket.status == 'waiting' %}selected{% endif %}>Waiting on Client</option>
+            <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+            <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 12px;">Priority Level</label>
+          <select name="priority" class="form-control" style="font-size: 13px;">
+            <option value="urgent" {% if ticket.priority == 'urgent' %}selected{% endif %}>Urgent (Critical)</option>
+            <option value="high" {% if ticket.priority == 'high' %}selected{% endif %}>High</option>
+            <option value="medium" {% if ticket.priority == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="low" {% if ticket.priority == 'low' %}selected{% endif %}>Low</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-secondary" style="width: 100%;">
+          Save Changes
+        </button>
+      </form>
+    </div>
+
+    <!-- Associated Website Card -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">
+        Target Monitored Site
+      </h3>
+      <div style="margin-bottom: 10px;">
+        <div style="font-weight: 700; font-size: 16px; color: #f8fafc;">
+          {{ ticket.website.name }}
+        </div>
+        <a href="{{ ticket.website.url }}" target="_blank" style="font-size: 12px; color: #60a5fa; word-break: break-all;">
+          {{ ticket.website.url }} &nearr;
+        </a>
+      </div>
+
+      <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: var(--text-secondary);">Current Health:</span>
+        <div>
+          {% if ticket.website.status == 'UP' %}
+            <span class="badge badge-up"><span class="badge-dot"></span> UP</span>
+          {% elif ticket.website.status == 'DOWN' %}
+            <span class="badge badge-down"><span class="badge-dot"></span> DOWN</span>
+          {% else %}
+            <span class="badge badge-paused"><span class="badge-dot"></span> {{ ticket.website.status }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+        <span style="color: var(--text-secondary);">Ping Interval:</span>
+        <span class="mono" style="color: #f1f5f9;">Every {{ ticket.website.check_interval_minutes }}m</span>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <form method="POST" action="{{ url_for('check_now', website_id=ticket.website.id) }}">
+          <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
+            ⚡ Ping Site Now
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Requester Info Card -->
+    <div class="card">
+      <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">
+        Contact Details
+      </h3>
+      <div style="font-size: 13px; margin-bottom: 8px;">
+        <div style="color: var(--text-muted); font-size: 11px;">NAME</div>
+        <div style="font-weight: 600; color: #f1f5f9;">{{ ticket.requester_name }}</div>
+      </div>
+      <div style="font-size: 13px; margin-bottom: 8px;">
+        <div style="color: var(--text-muted); font-size: 11px;">EMAIL</div>
+        <div><a href="mailto:{{ ticket.requester_email }}">{{ ticket.requester_email }}</a></div>
+      </div>
+      <div style="font-size: 13px;">
+        <div style="color: var(--text-muted); font-size: 11px;">LAST UPDATED</div>
+        <div style="color: #f1f5f9;">{{ ticket.updated_at.strftime('%b %d, %H:%M UTC') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleNoteTheme(isInternal) {
+  const btn = document.getElementById('submitReplyBtn');
+  const area = document.getElementById('replyMessageArea');
+  if (isInternal) {
+    btn.style.backgroundColor = '#d97706';
+    btn.innerText = 'Post Internal Note (Staff Only)';
+    area.placeholder = 'Write a confidential internal staff note here (not sent to client)...';
+  } else {
+    btn.style.backgroundColor = 'var(--accent-primary)';
+    btn.innerText = 'Post Response';
+    area.placeholder = 'Type your reply to the customer or internal notes here...';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Support Helpdesk - ChrisTech{% endblock %}
+
+{% block content %}
+<!-- Header & Overview -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px;">
+      🎧 Centralized Support Desk
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 15px;">
+      Manage inquiries, bug reports, and automated outage incidents for all your created websites.
+    </p>
+  </div>
+  <div style="display: flex; gap: 12px; align-items: center;">
+    <a href="{{ url_for('new_ticket') }}" class="btn btn-primary" style="padding: 10px 18px; font-size: 14px;">
+      <span>+ New Ticket</span>
+    </a>
+  </div>
+</div>
+
+<!-- Support Metrics KPIs -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px;">
+  <div class="card" style="padding: 18px 20px; margin-bottom: 0;">
+    <div style="color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+      Total Tickets
+    </div>
+    <div style="font-size: 28px; font-weight: 800; color: #f8fafc;">
+      {{ total_tickets }}
+    </div>
+    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Across {{ websites|length }} websites</div>
+  </div>
+
+  <div class="card" style="padding: 18px 20px; margin-bottom: 0;">
+    <div style="color: #60a5fa; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+      Open & In-Progress
+    </div>
+    <div style="font-size: 28px; font-weight: 800; color: #3b82f6;">
+      {{ open_tickets + in_progress_tickets }}
+    </div>
+    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">{{ open_tickets }} open, {{ in_progress_tickets }} working</div>
+  </div>
+
+  <div class="card" style="padding: 18px 20px; margin-bottom: 0; border-color: {% if urgent_tickets > 0 %}rgba(239, 68, 68, 0.4){% else %}var(--border-subtle){% endif %};">
+    <div style="color: #f87171; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+      Urgent & Incidents
+    </div>
+    <div style="font-size: 28px; font-weight: 800; color: {% if urgent_tickets > 0 %}#ef4444{% else %}#94a3b8{% endif %};">
+      {{ urgent_tickets }}
+    </div>
+    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">High-priority alerts</div>
+  </div>
+
+  <div class="card" style="padding: 18px 20px; margin-bottom: 0;">
+    <div style="color: #34d399; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+      Resolution Rate
+    </div>
+    <div style="font-size: 28px; font-weight: 800; color: #10b981;">
+      {{ resolution_rate }}%
+    </div>
+    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">{{ resolved_tickets }} tickets closed/resolved</div>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card" style="padding: 16px 20px; margin-bottom: 24px; background-color: var(--bg-surface-elevated);">
+  <form method="GET" action="{{ url_for('support_dashboard') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+    <!-- Website Selector -->
+    <div style="flex: 1; min-width: 180px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Website</label>
+      <select name="site_id" class="form-control" style="padding: 8px 12px; font-size: 13px;" onchange="this.form.submit()">
+        <option value="">All Monitored Websites ({{ websites|length }})</option>
+        {% for site in websites %}
+          <option value="{{ site.id }}" {% if selected_site_id == site.id %}selected{% endif %}>
+            {{ site.name }} ({{ site.open_tickets_count }} open)
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Status Filter -->
+    <div style="width: 140px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Status</label>
+      <select name="status" class="form-control" style="padding: 8px 12px; font-size: 13px;" onchange="this.form.submit()">
+        <option value="">All Statuses</option>
+        <option value="open" {% if selected_status == 'open' %}selected{% endif %}>Open</option>
+        <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="waiting" {% if selected_status == 'waiting' %}selected{% endif %}>Waiting on Client</option>
+        <option value="resolved" {% if selected_status == 'resolved' %}selected{% endif %}>Resolved</option>
+        <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>Closed</option>
+      </select>
+    </div>
+
+    <!-- Priority Filter -->
+    <div style="width: 130px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Priority</label>
+      <select name="priority" class="form-control" style="padding: 8px 12px; font-size: 13px;" onchange="this.form.submit()">
+        <option value="">All Priorities</option>
+        <option value="urgent" {% if selected_priority == 'urgent' %}selected{% endif %}>Urgent</option>
+        <option value="high" {% if selected_priority == 'high' %}selected{% endif %}>High</option>
+        <option value="medium" {% if selected_priority == 'medium' %}selected{% endif %}>Medium</option>
+        <option value="low" {% if selected_priority == 'low' %}selected{% endif %}>Low</option>
+      </select>
+    </div>
+
+    <!-- Search Box -->
+    <div style="flex: 2; min-width: 220px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Search</label>
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search tickets, subject, email..." class="form-control" style="padding: 8px 12px; font-size: 13px;">
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="btn btn-secondary" style="padding: 8px 14px;">Filter</button>
+      {% if selected_site_id or selected_status or selected_priority or selected_category or search_query %}
+        <a href="{{ url_for('support_dashboard') }}" class="btn btn-secondary" style="padding: 8px 12px; color: var(--text-muted) !important;" title="Clear filters">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Tickets List Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+    <h2 style="font-size: 16px; font-weight: 700; color: #ffffff;">
+      Support Tickets ({{ tickets|length }})
+    </h2>
+    <span style="font-size: 13px; color: var(--text-muted);">
+      Sorted by priority & recency
+    </span>
+  </div>
+
+  {% if tickets %}
+    <div class="table-container" style="border: none; border-radius: 0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket #</th>
+            <th>Website</th>
+            <th>Subject & Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Requester</th>
+            <th>Replies</th>
+            <th>Created</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in tickets %}
+            <tr>
+              <td>
+                <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" style="font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+                  #{{ ticket.ticket_number }}
+                </a>
+                {% if ticket.is_automated_incident %}
+                  <div style="font-size: 10px; color: #ef4444; font-weight: 700; text-transform: uppercase;">⚡ Outage Alert</div>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('site_detail', website_id=ticket.website.id) }}" style="font-weight: 600; color: #f1f5f9;">
+                  {{ ticket.website.name }}
+                </a>
+                <div style="font-size: 11px; color: var(--text-muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ ticket.website.url }}
+                </div>
+              </td>
+              <td>
+                <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" style="color: #f8fafc; font-weight: 600; display: block; margin-bottom: 3px;">
+                  {{ ticket.subject }}
+                </a>
+                <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(148, 163, 184, 0.1); color: #94a3b8; text-transform: uppercase;">
+                  {{ ticket.category }}
+                </span>
+              </td>
+              <td>
+                {% if ticket.priority == 'urgent' %}
+                  <span style="display: inline-flex; align-items: center; gap: 4px; color: #ef4444; font-weight: 700; font-size: 12px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px #ef4444;"></span> Urgent
+                  </span>
+                {% elif ticket.priority == 'high' %}
+                  <span style="display: inline-flex; align-items: center; gap: 4px; color: #f97316; font-weight: 700; font-size: 12px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #f97316;"></span> High
+                  </span>
+                {% elif ticket.priority == 'medium' %}
+                  <span style="display: inline-flex; align-items: center; gap: 4px; color: #3b82f6; font-weight: 600; font-size: 12px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span> Medium
+                  </span>
+                {% else %}
+                  <span style="display: inline-flex; align-items: center; gap: 4px; color: #94a3b8; font-weight: 600; font-size: 12px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span> Low
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                {% if ticket.status == 'open' %}
+                  <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    Open
+                  </span>
+                {% elif ticket.status == 'in_progress' %}
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+                    In Progress
+                  </span>
+                {% elif ticket.status == 'waiting' %}
+                  <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">
+                    Waiting
+                  </span>
+                {% elif ticket.status == 'resolved' %}
+                  <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    Resolved
+                  </span>
+                {% else %}
+                  <span class="badge" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3);">
+                    Closed
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">{{ ticket.requester_name }}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">{{ ticket.requester_email }}</div>
+              </td>
+              <td>
+                <span class="mono" style="font-size: 12px; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">
+                  💬 {{ ticket.replies_count }}
+                </span>
+              </td>
+              <td style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">
+                {{ ticket.created_at.strftime('%b %d, %H:%M') }}
+              </td>
+              <td style="text-align: right; white-space: nowrap;">
+                <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" class="btn btn-secondary btn-sm">
+                  View & Reply
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="padding: 48px 24px; text-align: center;">
+      <div style="font-size: 40px; margin-bottom: 12px;">🎉</div>
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">No support tickets found</h3>
+      <p style="color: var(--text-secondary); font-size: 14px; max-width: 480px; margin: 0 auto 20px auto;">
+        All your monitored websites are currently issue-free, or no tickets match the selected filters.
+      </p>
+      <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">
+        + Create a Ticket
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Integration Box: Public Support Portal & Widget for each website -->
+<div class="card" style="background-color: var(--bg-surface-elevated); margin-top: 32px;">
+  <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+    <span>🚀 Customer Portals & Embeddable Widget</span>
+  </h3>
+  <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+    Each website you monitor has a dedicated public support portal URL and can embed a floating support widget on its frontend.
+  </p>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+    {% for site in websites %}
+      <div style="background: var(--bg-surface); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 600; font-size: 14px; color: #f1f5f9;">{{ site.name }}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">{{ site.open_tickets_count }} active tickets</div>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <a href="{{ url_for('public_support_portal', website_id=site.id) }}" target="_blank" class="btn btn-secondary btn-sm" title="Open customer portal in new tab">
+            Public Portal ↗
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

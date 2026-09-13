@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Website - ChrisTech{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+  <div style="margin-bottom: 24px;">
+    <a href="{{ url_for('dashboard') }}" style="color: var(--text-muted); font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+      &larr; Back to Dashboard
+    </a>
+    <h1 style="font-size: 26px; font-weight: 800; color: #ffffff; margin-top: 8px; letter-spacing: -0.02em;">
+      Add Website to Monitor
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 14px;">
+      Configure endpoint details, check frequency, and optional keyword verification.
+    </p>
+  </div>
+
+  <div class="card">
+    <form action="{{ url_for('add_website') }}" method="POST">
+      <!-- Website Name -->
+      <div class="form-group">
+        <label for="name" class="form-label">Website / Service Name <span style="color: #ef4444;">*</span></label>
+        <input 
+          type="text" 
+          id="name" 
+          name="name" 
+          class="form-control" 
+          placeholder="e.g., Company Homepage, Auth API, Personal Blog"
+          value="{{ name or '' }}" 
+          required 
+          autofocus
+        >
+        <div class="form-hint">A recognizable nickname for this monitored target.</div>
+      </div>
+
+      <!-- Website URL -->
+      <div class="form-group">
+        <label for="url" class="form-label">Website URL <span style="color: #ef4444;">*</span></label>
+        <input 
+          type="url" 
+          id="url" 
+          name="url" 
+          class="form-control" 
+          placeholder="https://example.com"
+          value="{{ url or '' }}" 
+          required
+        >
+        <div class="form-hint">Must be reachable via HTTP or HTTPS. ChrisTech will ping this address with a 10-second timeout.</div>
+      </div>
+
+      <!-- Check Interval -->
+      <div class="form-group">
+        <label for="check_interval_minutes" class="form-label">Check Interval (Minutes) <span style="color: #ef4444;">*</span></label>
+        <input 
+          type="number" 
+          id="check_interval_minutes" 
+          name="check_interval_minutes" 
+          class="form-control" 
+          min="1" 
+          max="1440" 
+          value="{{ interval or '5' }}" 
+          required
+        >
+        <div class="form-hint">How often the background scheduler checks this site (e.g., every 5 minutes).</div>
+      </div>
+
+      <!-- Optional Keyword -->
+      <div class="form-group">
+        <label for="keyword" class="form-label">Keyword to Verify in HTML <span style="color: var(--text-muted); font-weight: normal;">(Optional)</span></label>
+        <input 
+          type="text" 
+          id="keyword" 
+          name="keyword" 
+          class="form-control" 
+          placeholder="e.g., Welcome, Status: OK, Copyright 2026"
+          value="{{ keyword or '' }}"
+        >
+        <div class="form-hint">
+          If specified, ChrisTech will verify that this exact word/phrase appears in the page's HTML body. If missing, the site will be flagged as DOWN even if HTTP returns 200 OK (great for catching blank pages or database error screens).
+        </div>
+      </div>
+
+      <!-- Submit & Cancel Buttons -->
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+          ✓ Save and Start Monitoring
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

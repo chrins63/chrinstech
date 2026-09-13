@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}{{ website.name }} - Site History - ChrisTech{% endblock %}
+
+{% block head_extra %}
+<style>
+  .detail-header {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+
+  .detail-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .detail-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .detail-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .meta-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .error-text {
+    color: #f87171;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    max-width: 320px;
+    word-break: break-word;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<div style="margin-bottom: 16px;">
+  <a href="{{ url_for('dashboard') }}" style="color: var(--text-muted); font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+    &larr; Back to Dashboard
+  </a>
+</div>
+
+<!-- Header Card -->
+<div class="detail-header">
+  <div class="detail-top-row">
+    <div>
+      <div class="detail-title">
+        <span>{{ website.name }}</span>
+        {% if website.status == 'UP' %}
+          <span class="badge badge-up"><span class="badge-dot"></span> UP</span>
+        {% elif website.status == 'DOWN' %}
+          <span class="badge badge-down"><span class="badge-dot"></span> DOWN</span>
+        {% elif website.status == 'PAUSED' %}
+          <span class="badge badge-paused"><span class="badge-dot"></span> PAUSED</span>
+        {% else %}
+          <span class="badge badge-pending"><span class="badge-dot"></span> PENDING</span>
+        {% endif %}
+      </div>
+      <div style="margin-top: 6px;">
+        <a href="{{ website.url }}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-size: 14px;">
+          {{ website.url }} &#x2197;
+        </a>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <!-- Check Now -->
+      <form action="{{ url_for('check_now', website_id=website.id) }}" method="POST" style="display: inline;">
+        <button type="submit" class="btn btn-primary" title="Trigger instant HTTP check">
+          ⚡ Check Now
+        </button>
+      </form>
+
+      <!-- Toggle Active/Paused -->
+      <form action="{{ url_for('toggle_website', website_id=website.id) }}" method="POST" style="display: inline;">
+        <button type="submit" class="btn btn-secondary">
+          {% if website.is_active %}⏸ Pause{% else %}▶ Resume{% endif %}
+        </button>
+      </form>
+
+      <!-- Delete Site -->
+      <form action="{{ url_for('delete_website', website_id=website.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete \'{{ website.name }}\'? All check logs will be permanently deleted.');">
+        <button type="submit" class="btn btn-danger">
+          Delete
+        </button>
+      </form>
+
+      <!-- New Support Ticket -->
+      <a href="{{ url_for('new_ticket', website_id=website.id) }}" class="btn btn-secondary">
+        <span>+ Log Ticket</span>
+      </a>
+
+      <!-- Public Portal -->
+      <a href="{{ url_for('public_support_portal', website_id=website.id) }}" target="_blank" class="btn btn-secondary" title="Open customer submission portal">
+        <span>Portal ↗</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Key Metrics Row -->
+  <div class="detail-meta-grid">
+    <div class="meta-item">
+      <span class="meta-label">Overall Uptime</span>
+      <span class="meta-value" style="color: {% if website.uptime_percentage >= 99.0 %}#34d399{% elif website.uptime_percentage >= 95.0 %}#fbbf24{% else %}#f87171{% endif %};">
+        {{ website.uptime_percentage }}%
+      </span>
+    </div>
+
+    <div class="meta-item">
+      <span class="meta-label">Support Status</span>
+      <span class="meta-value" style="font-size: 14px;">
+        <a href="{{ url_for('support_dashboard', site_id=website.id) }}" style="color: {% if website.open_tickets_count > 0 %}#60a5fa{% else %}#10b981{% endif %};">
+          {{ website.open_tickets_count }} Open Ticket(s) &rarr;
+        </a>
+      </span>
+    </div>
+
+    <div class="meta-item">
+      <span class="meta-label">Last Response Time</span>
+      <span class="meta-value mono">
+        {% if website.latest_log and website.latest_log.response_time_ms is not None %}
+          {{ website.latest_log.response_time_ms }} ms
+        {% else %}
+          —
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="meta-item">
+      <span class="meta-label">Check Frequency</span>
+      <span class="meta-value">Every {{ website.check_interval_minutes }} min</span>
+    </div>
+
+    <div class="meta-item">
+      <span class="meta-label">Keyword Verification</span>
+      <span class="meta-value mono" style="font-size: 13px;">
+        {% if website.keyword %}
+          "{{ website.keyword }}"
+        {% else %}
+          <span style="color: var(--text-muted); font-weight: normal;">None configured</span>
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="meta-item">
+      <span class="meta-label">Monitored Since</span>
+      <span class="meta-value" style="font-size: 13px;">
+        {{ website.created_at.strftime('%Y-%m-%d') }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Support Tickets for this Website Section -->
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 28px;">
+  <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h2 style="font-size: 16px; font-weight: 700; color: #ffffff;">Support Tickets for {{ website.name }}</h2>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Inquiries, outages, and issues logged for this specific site</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('new_ticket', website_id=website.id) }}" class="btn btn-primary btn-sm">
+        + Log Ticket
+      </a>
+      <a href="{{ url_for('support_dashboard', site_id=website.id) }}" class="btn btn-secondary btn-sm">
+        View All ({{ website.support_tickets.count() }})
+      </a>
+    </div>
+  </div>
+
+  {% if website.support_tickets.count() > 0 %}
+    <div class="table-container" style="border: none;">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket #</th>
+            <th>Subject</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Requester</th>
+            <th>Created</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in website.support_tickets.limit(5).all() %}
+            <tr>
+              <td class="mono">
+                <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" style="font-weight: 700; color: #60a5fa;">
+                  #{{ ticket.ticket_number }}
+                </a>
+              </td>
+              <td>
+                <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" style="font-weight: 600; color: #f8fafc;">
+                  {{ ticket.subject }}
+                </a>
+              </td>
+              <td style="text-transform: uppercase; font-size: 11px; color: var(--text-muted);">
+                {{ ticket.category }}
+              </td>
+              <td>
+                {% if ticket.priority == 'urgent' %}
+                  <span style="color: #ef4444; font-weight: 700; font-size: 12px;">🔴 Urgent</span>
+                {% elif ticket.priority == 'high' %}
+                  <span style="color: #f97316; font-weight: 700; font-size: 12px;">🟠 High</span>
+                {% else %}
+                  <span style="color: #60a5fa; font-size: 12px;">{{ ticket.priority|capitalize }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge" style="background: rgba(255,255,255,0.06); font-size: 11px;">
+                  {{ ticket.status|replace('_', ' ')|capitalize }}
+                </span>
+              </td>
+              <td style="font-size: 12px; color: var(--text-secondary);">
+                {{ ticket.requester_name }}
+              </td>
+              <td style="font-size: 12px; color: var(--text-muted);">
+                {{ ticket.created_at.strftime('%b %d, %H:%M') }}
+              </td>
+              <td style="text-align: right;">
+                <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" class="btn btn-secondary btn-sm">
+                  View
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+      No support tickets have been filed for {{ website.name }} yet.
+    </div>
+  {% endif %}
+</div>
+
+<!-- Last 50 Checks Log Section -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+  <div>
+    <h2 style="font-size: 18px; font-weight: 700; color: #ffffff;">Recent Check History</h2>
+    <p style="font-size: 13px; color: var(--text-secondary);">Displaying the last 50 automated checks for this endpoint.</p>
+  </div>
+  <span style="font-size: 12px; color: var(--text-muted);" class="mono">Showing {{ recent_checks|length }} record(s)</span>
+</div>
+
+{% if recent_checks %}
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Checked At (UTC)</th>
+        <th>Status</th>
+        <th>HTTP Code</th>
+        <th>Response Time</th>
+        <th>Error / Diagnostic Message</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in recent_checks %}
+      <tr>
+        <!-- Timestamp -->
+        <td class="mono" style="font-size: 13px; color: var(--text-secondary);">
+          {{ log.checked_at.strftime('%Y-%m-%d %H:%M:%S') }}
+        </td>
+
+        <!-- Status Badge -->
+        <td>
+          {% if log.is_up %}
+            <span class="badge badge-up"><span class="badge-dot"></span> UP</span>
+          {% else %}
+            <span class="badge badge-down"><span class="badge-dot"></span> DOWN</span>
+          {% endif %}
+        </td>
+
+        <!-- Status Code -->
+        <td>
+          {% if log.status_code %}
+            <span class="mono" style="font-weight: 700; color: {% if log.status_code < 400 %}#34d399{% else %}#f87171{% endif %};">
+              {{ log.status_code }}
+            </span>
+          {% else %}
+            <span style="color: var(--text-muted); font-size: 12px;">No Response</span>
+          {% endif %}
+        </td>
+
+        <!-- Response Time -->
+        <td>
+          {% if log.response_time_ms is not None %}
+            <span class="mono" style="font-weight: 600; color: {% if log.response_time_ms < 300 %}#34d399{% elif log.response_time_ms < 800 %}#fbbf24{% else %}#f87171{% endif %};">
+              {{ log.response_time_ms }} ms
+            </span>
+          {% else %}
+            <span style="color: var(--text-muted);">—</span>
+          {% endif %}
+        </td>
+
+        <!-- Error Message -->
+        <td>
+          {% if log.error_message %}
+            <div class="error-text">
+              {{ log.error_message }}
+            </div>
+          {% else %}
+            <span style="color: var(--text-muted); font-size: 12px;">All checks passed (healthy)</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 40px 20px;">
+  <div style="font-size: 32px; margin-bottom: 8px;">⏳</div>
+  <h4 style="color: #ffffff; margin-bottom: 6px;">No Checks Recorded Yet</h4>
+  <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+    The scheduler has not executed a check for this website yet. You can trigger one right now.
+  </p>
+  <form action="{{ url_for('check_now', website_id=website.id) }}" method="POST">
+    <button type="submit" class="btn btn-primary btn-sm">
+      ⚡ Run Initial Check Now
+    </button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

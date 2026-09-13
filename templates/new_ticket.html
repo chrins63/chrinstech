@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Create Support Ticket - ChrisTech{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+  <div style="margin-bottom: 24px;">
+    <a href="{{ url_for('support_dashboard') }}" style="color: var(--text-secondary); text-decoration: none; font-size: 14px;">
+      &larr; Back to Support Desk
+    </a>
+    <h1 style="font-size: 26px; font-weight: 800; margin-top: 8px; color: #ffffff; letter-spacing: -0.02em;">
+      Submit a New Support Ticket
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 14px;">
+      Log an issue, customer inquiry, or maintenance task against one of your monitored websites.
+    </p>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('new_ticket') }}">
+      <!-- Target Website Selection -->
+      <div class="form-group">
+        <label class="form-label">Target Website *</label>
+        <select name="website_id" class="form-control" required>
+          <option value="" disabled {% if not preselected_site_id %}selected{% endif %}>Select which website this ticket belongs to...</option>
+          {% for site in websites %}
+            <option value="{{ site.id }}" {% if preselected_site_id == site.id or website_id == site.id %}selected{% endif %}>
+              {{ site.name }} ({{ site.url }})
+            </option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">Tickets are linked directly to the uptime health logs of the chosen website.</div>
+      </div>
+
+      <!-- Requester Information -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Requester / Client Name *</label>
+          <input type="text" name="requester_name" class="form-control" placeholder="e.g. Sarah Connor" value="{{ requester_name or '' }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Requester Email *</label>
+          <input type="email" name="requester_email" class="form-control" placeholder="e.g. sarah@example.com" value="{{ requester_email or '' }}" required>
+        </div>
+      </div>
+
+      <!-- Category & Priority -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Issue Category</label>
+          <select name="category" class="form-control">
+            <option value="general" {% if category == 'general' %}selected{% endif %}>General Inquiry</option>
+            <option value="bug" {% if category == 'bug' %}selected{% endif %}>Bug Report / Broken Feature</option>
+            <option value="outage" {% if category == 'outage' %}selected{% endif %}>Downtime / Outage Incident</option>
+            <option value="performance" {% if category == 'performance' %}selected{% endif %}>Slow Performance / Latency</option>
+            <option value="billing" {% if category == 'billing' %}selected{% endif %}>Account / Billing</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Priority Level</label>
+          <select name="priority" class="form-control">
+            <option value="low" {% if priority == 'low' %}selected{% endif %}>Low (Minor question)</option>
+            <option value="medium" {% if not priority or priority == 'medium' %}selected{% endif %}>Medium (Normal)</option>
+            <option value="high" {% if priority == 'high' %}selected{% endif %}>High (Degraded service)</option>
+            <option value="urgent" {% if priority == 'urgent' %}selected{% endif %}>Urgent (Complete service outage)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Ticket Subject -->
+      <div class="form-group">
+        <label class="form-label">Ticket Subject *</label>
+        <input type="text" name="subject" class="form-control" placeholder="Brief summary of the issue..." value="{{ subject or '' }}" required>
+      </div>
+
+      <!-- Ticket Detailed Description -->
+      <div class="form-group">
+        <label class="form-label">Detailed Description / Error Messages *</label>
+        <textarea name="description" rows="5" class="form-control" placeholder="Describe the problem, steps to reproduce, affected URLs, or error codes..." required>{{ description or '' }}</textarea>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+        <a href="{{ url_for('support_dashboard') }}" class="btn btn-secondary">
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+          Create Support Ticket
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

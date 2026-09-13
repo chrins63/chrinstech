@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}ChrisTech - Website Monitoring Dashboard{% endblock %}
+
+{% block head_extra %}
+<style>
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .stat-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .site-title-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .site-name-link {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 15px;
+  }
+
+  .site-url {
+    color: var(--text-muted);
+    font-size: 12px;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .keyword-pill {
+    display: inline-block;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    background-color: var(--bg-surface);
+    border: 1px dashed var(--border-subtle);
+    border-radius: 12px;
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .empty-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #ffffff;
+  }
+
+  .empty-desc {
+    color: var(--text-secondary);
+    font-size: 14px;
+    max-width: 420px;
+    margin: 0 auto 20px auto;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Top Stats Row -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-header">
+      <span>Total Monitored</span>
+      <span>🌐</span>
+    </div>
+    <div class="stat-value">{{ total_sites }}</div>
+    <div style="font-size: 12px; color: var(--text-muted);">Configured endpoints</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span>Operational</span>
+      <span class="stat-badge" style="background: var(--up-green-bg); color: var(--up-green);">ONLINE</span>
+    </div>
+    <div class="stat-value" style="color: var(--up-green);">{{ up_sites }}</div>
+    <div style="font-size: 12px; color: var(--text-muted);">Passing all health checks</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span>Outages / Down</span>
+      <span class="stat-badge" style="background: var(--down-red-bg); color: var(--down-red);">ALERTS</span>
+    </div>
+    <div class="stat-value" style="color: var(--down-red);">{{ down_sites }}</div>
+    <div style="font-size: 12px; color: var(--text-muted);">Requires immediate attention</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span>Avg Response</span>
+      <span>⚡</span>
+    </div>
+    <div class="stat-value">{{ avg_response_time }}<span style="font-size: 16px; font-weight: 500; margin-left: 4px; color: var(--text-muted);">ms</span></div>
+    <div style="font-size: 12px; color: var(--text-muted);">Active sites average</div>
+  </div>
+</div>
+
+<!-- Websites Header & Table -->
+<div class="header-actions">
+  <div>
+    <h2 style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">Monitored Websites</h2>
+    <p style="font-size: 13px; color: var(--text-secondary);">Real-time status, response times, and uptime metrics.</p>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('add_website') }}" class="btn btn-primary">
+      <span>+ Add Website</span>
+    </a>
+  </div>
+</div>
+
+{% if websites %}
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Website</th>
+        <th>Keyword</th>
+        <th>Interval</th>
+        <th>Response Time</th>
+        <th>Uptime</th>
+        <th>Last Checked</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for site in websites %}
+      <tr>
+        <!-- Status Badge -->
+        <td>
+          {% if site.status == 'UP' %}
+            <span class="badge badge-up">
+              <span class="badge-dot"></span> UP
+            </span>
+          {% elif site.status == 'DOWN' %}
+            <span class="badge badge-down">
+              <span class="badge-dot"></span> DOWN
+            </span>
+          {% elif site.status == 'PAUSED' %}
+            <span class="badge badge-paused">
+              <span class="badge-dot"></span> PAUSED
+            </span>
+          {% else %}
+            <span class="badge badge-pending">
+              <span class="badge-dot"></span> PENDING
+            </span>
+          {% endif %}
+        </td>
+
+        <!-- Site Name & URL -->
+        <td>
+          <div class="site-title-cell">
+            <a href="{{ url_for('site_detail', website_id=site.id) }}" class="site-name-link">
+              {{ site.name }}
+            </a>
+            <a href="{{ site.url }}" target="_blank" rel="noopener noreferrer" class="site-url">
+              {{ site.url }}
+            </a>
+            {% if site.open_tickets_count > 0 %}
+              <div style="margin-top: 4px;">
+                <a href="{{ url_for('support_dashboard', site_id=site.id) }}" style="font-size: 11px; padding: 2px 7px; border-radius: 9999px; background: {% if site.urgent_tickets_count > 0 %}rgba(239, 68, 68, 0.2){% else %}rgba(59, 130, 246, 0.15){% endif %}; color: {% if site.urgent_tickets_count > 0 %}#f87171{% else %}#60a5fa{% endif %}; text-decoration: none; font-weight: 600;">
+                  🎧 {{ site.open_tickets_count }} open ticket{% if site.open_tickets_count != 1 %}s{% endif %}
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </td>
+
+        <!-- Optional Keyword -->
+        <td>
+          {% if site.keyword %}
+            <span class="keyword-pill" title="Requires HTML to contain '{{ site.keyword }}'">"{{ site.keyword }}"</span>
+          {% else %}
+            <span style="color: var(--text-muted); font-size: 12px;">None</span>
+          {% endif %}
+        </td>
+
+        <!-- Check Interval -->
+        <td style="color: var(--text-secondary); font-size: 13px;">
+          Every {{ site.check_interval_minutes }}m
+        </td>
+
+        <!-- Response Time -->
+        <td>
+          {% if site.latest_log and site.latest_log.response_time_ms is not None %}
+            <span class="mono" style="font-weight: 600; color: {% if site.latest_log.response_time_ms < 300 %}#34d399{% elif site.latest_log.response_time_ms < 800 %}#fbbf24{% else %}#f87171{% endif %};">
+              {{ site.latest_log.response_time_ms }} ms
+            </span>
+          {% else %}
+            <span style="color: var(--text-muted); font-size: 13px;">—</span>
+          {% endif %}
+        </td>
+
+        <!-- Uptime Percentage -->
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="mono" style="font-weight: 700; color: {% if site.uptime_percentage >= 99.0 %}#34d399{% elif site.uptime_percentage >= 95.0 %}#fbbf24{% else %}#f87171{% endif %};">
+              {{ site.uptime_percentage }}%
+            </span>
+          </div>
+        </td>
+
+        <!-- Last Checked Time -->
+        <td style="color: var(--text-secondary); font-size: 13px;">
+          {% if site.latest_log %}
+            {{ site.latest_log.checked_at.strftime('%b %d, %H:%M:%S UTC') }}
+          {% else %}
+            <span style="color: var(--text-muted);">Never</span>
+          {% endif %}
+        </td>
+
+        <!-- Actions -->
+        <td style="text-align: right;">
+          <div class="action-buttons" style="justify-content: flex-end;">
+            <!-- Check Now Button -->
+            <form action="{{ url_for('check_now', website_id=site.id) }}" method="POST" style="display: inline;">
+              <button type="submit" class="btn btn-secondary btn-sm" title="Run manual check now">
+                ⚡ Check
+              </button>
+            </form>
+
+            <!-- Details Link -->
+            <a href="{{ url_for('site_detail', website_id=site.id) }}" class="btn btn-secondary btn-sm">
+              Logs
+            </a>
+
+            <!-- Delete Button with Confirmation Prompt -->
+            <form action="{{ url_for('delete_website', website_id=site.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete \'{{ site.name }}\'? All check logs will be permanently deleted.');">
+              <button type="submit" class="btn btn-danger btn-sm" title="Delete Website">
+                Delete
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+  <div class="empty-icon">📡</div>
+  <h3 class="empty-title">No Monitored Websites Yet</h3>
+  <p class="empty-desc">
+    Start monitoring your servers, APIs, and web apps. ChrisTech will ping them periodically, verify keywords, and alert you by email if any go down.
+  </p>
+  <a href="{{ url_for('add_website') }}" class="btn btn-primary">
+    <span>+ Add Your First Website</span>
+  </a>
+</div>
+{% endif %}
+{% endblock %}

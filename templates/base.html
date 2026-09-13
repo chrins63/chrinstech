@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ChrisTech - Website Monitoring{% endblock %}</title>
+  
+  <!-- Modern Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-main: #0b0f17;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1a2234;
+      --border-subtle: #243049;
+      --border-focus: #3b82f6;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-primary: #2563eb;
+      --accent-hover: #1d4ed8;
+      --up-green: #10b981;
+      --up-green-bg: rgba(16, 185, 129, 0.12);
+      --down-red: #ef4444;
+      --down-red-bg: rgba(239, 68, 68, 0.14);
+      --paused-amber: #f59e0b;
+      --paused-amber-bg: rgba(245, 158, 11, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    code, pre, .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    a {
+      color: #60a5fa;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: #93c5fd;
+      text-decoration: underline;
+    }
+
+    /* Navbar */
+    .navbar {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+      font-size: 18px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-decoration: none !important;
+    }
+
+    .nav-btn-primary {
+      background-color: var(--accent-primary);
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-btn-primary:hover {
+      background-color: var(--accent-hover);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+    }
+
+    .nav-btn-ghost {
+      background: transparent;
+      color: var(--text-secondary) !important;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .nav-btn-ghost:hover {
+      background-color: var(--bg-surface-elevated);
+      color: #ffffff !important;
+      border-color: #3b4d6b;
+    }
+
+    /* Main Container */
+    .main-content {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px 64px 24px;
+      flex: 1;
+    }
+
+    /* Flash Messages */
+    .flash-container {
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .flash-alert {
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid transparent;
+    }
+
+    .flash-success {
+      background-color: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .flash-danger {
+      background-color: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .flash-warning {
+      background-color: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+
+    .flash-info {
+      background-color: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .badge-up {
+      background-color: var(--up-green-bg);
+      color: var(--up-green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-up .badge-dot {
+      background-color: var(--up-green);
+      box-shadow: 0 0 6px var(--up-green);
+    }
+
+    .badge-down {
+      background-color: var(--down-red-bg);
+      color: var(--down-red);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .badge-down .badge-dot {
+      background-color: var(--down-red);
+      box-shadow: 0 0 6px var(--down-red);
+    }
+
+    .badge-paused {
+      background-color: var(--paused-amber-bg);
+      color: var(--paused-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-paused .badge-dot {
+      background-color: var(--paused-amber);
+    }
+
+    .badge-pending {
+      background-color: rgba(148, 163, 184, 0.12);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+    .badge-pending .badge-dot {
+      background-color: #94a3b8;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none !important;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-primary);
+      color: #ffffff !important;
+    }
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-primary) !important;
+      border-color: var(--border-subtle);
+    }
+    .btn-secondary:hover {
+      background-color: #243049;
+      border-color: #3b4d6b;
+    }
+
+    .btn-danger {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #f87171 !important;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover {
+      background-color: #ef4444;
+      color: #ffffff !important;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #e2e8f0;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    .form-control {
+      width: 100%;
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #ffffff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Footer */
+    .footer {
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+      padding: 20px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+  </style>
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="{{ url_for('dashboard') }}" class="brand">
+        <div class="brand-icon">⚡</div>
+        <span>ChrisTech</span>
+      </a>
+      
+      <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}" class="nav-btn nav-btn-ghost">
+          <span>📊 Monitoring</span>
+        </a>
+        <a href="{{ url_for('support_dashboard') }}" class="nav-btn nav-btn-ghost" style="position: relative;">
+          <span>🎧 Support Desk</span>
+          {% if nav_open_tickets is defined and nav_open_tickets > 0 %}
+            <span style="background: {% if nav_urgent_tickets > 0 %}#ef4444{% else %}#2563eb{% endif %}; color: #fff; font-size: 11px; font-weight: 700; border-radius: 9999px; padding: 2px 7px; margin-left: 4px;">
+              {{ nav_open_tickets }}
+            </span>
+          {% endif %}
+        </a>
+        <a href="{{ url_for('new_ticket') }}" class="nav-btn nav-btn-ghost">
+          <span>+ New Ticket</span>
+        </a>
+        <a href="{{ url_for('add_website') }}" class="nav-btn nav-btn-primary">
+          <span>+ Add Website</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main View Content -->
+  <main class="main-content">
+    <!-- Flash Messages / Alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-alert flash-{{ category }}">
+              <span>{{ message }}</span>
+              <button onclick="this.parentElement.remove()" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 16px; margin-left: 12px;">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="footer">
+    <div>ChrisTech Self-Hosted Website Monitor &bull; Flask + SQLAlchemy (PostgreSQL) + APScheduler</div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

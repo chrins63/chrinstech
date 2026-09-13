@@ -1,0 +1,6 @@
+{
+  "name": "ChrisTech",
+  "description": "Enterprise self-hosted website monitoring and support ticketing suite with public status page, multi-channel alerts (Slack, Discord, Telegram, Webhooks), SSL/domain radar, maintenance windows, and SLA reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
